@@ -9,7 +9,7 @@ const con = mysql.createConnection({
     user: 'root',
     password: '',
     database: 'finalyearapp',
-    port: '3307',
+    port: '3306',
     pool: 1
 });
 try {
@@ -49,6 +49,36 @@ app.get('/services', (req, res) => {
         }
     )
 })
+app.get('/services/:id',(req,res)=>{
+    console.log("req::::",req.params)
+    con.query('select ServiceProviderId,ServiceProvideName,ServiceCategoryId from service where service_id=?',[req.params.id],(err,result)=>{
+        if (err) res.send("error in query" + err)
+        else res.send(result[0]);
+    })
+   
+})
+app.get('/service-providers',(req,res)=>{
+    con.query('select * from SERVICE_PROVIDER',[req.params.id],(err,result)=>{
+        if (err) res.send("error in query" + err)
+        else res.send(result);
+    })
+
+})
+app.get('/service-providers/:serviceId',(req,res)=>{
+    console.log("new req")
+    con.query('select * from SERVICE_PROVIDER where ServiceCategoryId=?',[req.params.serviceId],(err,result)=>{
+        if (err) res.send("error in query" + err)
+        else res.send(result);
+    })
+
+})
+app.get('/service-provider/:serviceProviderId',(req,res)=>{
+    con.query('select * from SERVICE_PROVIDER where ServiceProviderId=?',[req.params.serviceProviderId],(err,result)=>{
+        if (err) res.send("error in query" + err)
+        else res.send(result[0]);
+    })
+
+})
 app.get('/services-providers/:service_id', (req, res) => {
     con.query("select * from service_provider where service_id=?", [req.params.service_id],
         (err, result) => {
@@ -61,16 +91,25 @@ app.post('/users', (req, res) => {
     con.query("insert into user(user_name,user_phone,user_email,user_pass) values(?,?,?,?)", [req.body.user_name, req.body.user_phone, req.body.user_email, req.body.user_pass],
         (err, result) => {
             if (err) {
-
                 res.send(err.message)
             }
             else {
-
                 res.send(result)
-
             }
         })
-
+})
+app.post('/service-provider', (req, res) => {
+    // return res.send(req.body);
+    con.query(`insert into SERVICE_PROVIDER (ServiceProviderImage,ServiceProvideName,ServiceProviderPhone,ServiceProviderEmail,ServiceProviderPassword)
+    values(?,?,?,?,?);`, [req.body.ServiceProviderImage, req.body.ServiceProvideName, req.body.ServiceProviderPhone, req.body.ServiceProviderEmail,req.body.ServiceProviderPassword],
+        (err, result) => {
+            if (err) {
+                res.send(err.message)
+            }
+            else {
+                res.send(result)
+            }
+        })
 })
 app.post("/login", (req, res) => {
     // return res.send(req.body);
@@ -89,6 +128,18 @@ app.post("/login", (req, res) => {
             }
         }
     })
+})
+app.get('/search-service/:searchtearm',(req,res)=>{
+    con.query(`select * from service where service_title  like '%${req.params.searchtearm}%'`,
+    (err, result) => {
+        if(err){
+            console.log("error : ",err);
+        }else{
+            res.send(result);
+        }
+    }
+    )
+    
 })
 app.get('/super', (req, res) => {
     con.query("select * from super_cat", (err, result) => {
@@ -121,4 +172,4 @@ app.get('/hello', (req, res) => {
     res.send("sdkefl");
 })
 
-app.listen(3000, '192.168.1.6', console.log("server running"));
+app.listen(3000, '192.168.153.180', console.log("server running"));
