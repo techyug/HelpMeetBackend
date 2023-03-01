@@ -111,23 +111,45 @@ app.post('/service-provider', (req, res) => {
             }
         })
 })
+app.post('/service-provider/add-service',(req,res)=>{
+    res.send("add service to service provider profile");
+})
 app.post("/login", (req, res) => {
     // return res.send(req.body);
-    con.query("select user_id, user_phone ,user_pass from user where user_phone=?", [req.body.user_phone], (err, result) => {
-        if (err) {
-            res.end("Error : " + err);
-        }
-        else {
-            // return res.send(result[0]);
 
-            if (result[0] && req.body.user_pass === result[0].user_pass) {
-                res.end("Login Success")
-            }
-            else {
-                res.end("Wrong password")
-            }
+    con.query(`select * from service_provider where ServiceProviderPhone=? and ServiceProviderPassword=? `, [req.body.user_phone,req.body.user_pass],(err,result)=>{
+        if(err)
+        (err)=>console.log("error ",err)
+        else if(result[0]!=undefined){
+            result[0].role = "Service Provider";
+            result[0].msg="Login Success"
+            console.log(result[0])
+            res.send(result[0]);
         }
+        else{
+            con.query("select * from user where user_phone=? and user_pass=?", [req.body.user_phone, req.body.user_pass], (err, result) => {
+                if (err) {
+                    res.end("Error : " + err);
+                }
+                else {
+                    if (result[0]) {
+                        result[0].role="user";
+                        result[0].msg="Login Success";
+                        res.send(result[0])
+                    }
+                    else {
+                        res.json({msg:"Wrong password"})
+                        
+                    }
+                }
+            })
+
+        }
+        
+
     })
+   
+    
 })
 app.get('/search-service/:searchtearm',(req,res)=>{
     con.query(`select * from service where service_title  like '%${req.params.searchtearm}%'`,
