@@ -24,6 +24,7 @@ try {
 app.use((req, res, next) => {
     
     console.log(req.ip,req.path, 'Time:', Date.now())
+    console.log(req.body)
     next()
   })
 
@@ -74,7 +75,7 @@ app.get('/service-providers', (req, res) => {
 })
 app.get('/service-providers/:serviceId', (req, res) => {
     
-    con.query(`select * from  service_provider left join service_provider_and_service on service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap where service_id=${con.escape(req.params.serviceId)}`, (err, result) => {
+    con.query(`select * from  service_provider left join service_provider_and_service on service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap natural join service where service_id=${con.escape(req.params.serviceId)}`, (err, result) => {
         if (err) res.send("error in query" + err)
         else res.send(result);
     })
@@ -124,16 +125,19 @@ app.post('/service-provider/add-service', (req, res) => {
 })
 app.post("/login", (req, res) => {
     // return res.send(req.body);
-
+    let query = `select * from  
+    service_provider left join service_provider_and_service
+    on service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap
+    left join service on service.service_id= service_provider_and_service.service_id
+    where ServiceProviderPhone=${con.escape(req.body.user_phone)} 
+    and ServiceProviderPassword=${con.escape(req.body.user_pass)} `;
     
-    con.query(`select * from  service_provider left join
-     service_provider_and_service on 
-     service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap 
-     where ServiceProviderPhone=${con.escape(req.body.user_phone)} 
-     and ServiceProviderPassword=${con.escape(req.body.user_pass)} `, 
+    con.query(query, 
      (err, result) => {
         if (err)
-            console.log("error ", err)
+            {console.log("error ", err)
+            res.send("error");
+        }
         else if (result[0] != undefined) {
             result[0].role = "Service Provider";
             result[0].msg = "Login Success"
