@@ -21,6 +21,11 @@ try {
     console.warn(error)
 }
 
+app.use((req, res, next) => {
+    
+    console.log(req.ip,req.path, 'Time:', Date.now())
+    next()
+  })
 
 app.get('/users', (req, res) => {
     con.query("select * from user", (err, result) => {
@@ -68,8 +73,8 @@ app.get('/service-providers', (req, res) => {
 
 })
 app.get('/service-providers/:serviceId', (req, res) => {
-    console.log("new req")
-    con.query('select * from SERVICE_PROVIDER where ServiceCategoryId=?', [req.params.serviceId], (err, result) => {
+    
+    con.query(`select * from  service_provider left join service_provider_and_service on service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap where service_id=${con.escape(req.params.serviceId)}`, (err, result) => {
         if (err) res.send("error in query" + err)
         else res.send(result);
     })
