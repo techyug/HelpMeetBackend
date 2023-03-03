@@ -2,19 +2,29 @@ var express = require("express")
 var bodyParser = require('body-parser');
 var jwt = require('jsonwebtoken')
 var app = express();
-
+require('dotenv').config();
 app.use(express.json());
 app.use(bodyParser.json())
 
 const mysql = require("mysql2")
+// const con = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'root',
+//     password: '',
+//     database: 'finalyearapp',
+//     port: '3306',
+//     pool: 1
+// });
+
 const con = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'finalyearapp',
+    host: 'db4free.net',
+    user: 'helpmeetuser',
+    password: '*tAqb7FfzD_YUiR',
+    database: 'db_7080',
     port: '3306',
     pool: 1
 });
+
 try {
     con.connect();
 } catch (error) {
@@ -217,4 +227,4 @@ app.get('/hello', (req, res) => {
     res.send("sdkefl");
 })
 
-app.listen(3000, '192.168.162.79', console.log("server running"));
+app.listen(3000, '192.168.153.180', console.log("server running"));
