@@ -107,9 +107,10 @@ app.get('/services-providers/:service_id', (req, res) => {
 })
 app.post('/users', (req, res) => {
     // return res.send(req.body);
-    con.query("insert into user(user_name,user_phone,user_email,user_pass) values(?,?,?,?)", [req.body.user_name, req.body.user_phone, req.body.user_email, req.body.user_pass],
+    con.query(`insert into user(user_name,user_phone,user_email,user_pass) values(${con.escape(req.body.user_name)},${con.escape(req.body.user_phone)},${con.escape(req.body.user_email)},${con.escape(req.body.user_pass)})`,
         (err, result) => {
             if (err) {
+                console.log(err)
                 res.send(err.message)
             }
             else {
@@ -123,9 +124,12 @@ app.post('/service-provider', (req, res) => {
     values(?,?,?,?,?);`, [req.body.ServiceProviderImage, req.body.ServiceProvideName, req.body.ServiceProviderPhone, req.body.ServiceProviderEmail, req.body.ServiceProviderPassword],
         (err, result) => {
             if (err) {
-                res.send(err.message)
+                console.log(err)
+                res.sendStatus(500).send(err.message)
+                
             }
             else {
+                console.log(result)
                 res.send(result)
             }
         })
@@ -141,7 +145,7 @@ app.post("/login", (req, res) => {
     left join service on service.service_id= service_provider_and_service.service_id
     where ServiceProviderPhone=${con.escape(req.body.user_phone)} 
     and ServiceProviderPassword=${con.escape(req.body.user_pass)} `;
-    
+    console.log(query)
     con.query(query, 
      (err, result) => {
         if (err)
@@ -157,7 +161,9 @@ app.post("/login", (req, res) => {
 
         }
         else {
-            con.query(`select * from user where user_phone=${con.escape(req.body.user_phone)} and user_pass=${con.escape(req.body.user_pass)}`, (err, result) => {
+            let query= `select * from user where user_phone=${con.escape(req.body.user_phone)} and user_pass=${con.escape(req.body.user_pass)}`;
+            console.log(query)
+            con.query(query, (err, result) => {
                 if (err) {
                     console.log(err)
                     res.end("Error : " + err);
@@ -227,4 +233,5 @@ app.get('/hello', (req, res) => {
     res.send("sdkefl");
 })
 
-app.listen(3000, console.log("server running"));
+app.listen(3000, console.log("server running on render"));
+// app.listen(3000, console.log("server running on local machine"));
