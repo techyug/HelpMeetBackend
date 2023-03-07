@@ -136,7 +136,6 @@ app.get('/services-providers/:service_id', (req, res) => {
     con.query("select * from service_provider where service_id=?", [req.params.service_id],
         (err, result) => {
             err ? res.send("err" + err) : res.send(result);
-
         })
 })
 app.post('/users', (req, res) => {
@@ -155,12 +154,11 @@ app.post('/users', (req, res) => {
 app.post('/service-provider', (req, res) => {
     // return res.send(req.body);
     con.query(`insert into service_provider (ServiceProvideName,ServiceProviderPhone,ServiceProviderEmail,ServiceProviderPassword)
-    values(${req.body.ServiceProvideName},${req.body.ServiceProviderPhone},${req.body.ServiceProviderEmail},${req.body.ServiceProviderPassword});`,
+    values(${con.escape(req.body.ServiceProvideName)},${con.escape(req.body.ServiceProviderPhone)},${con.escape(req.body.ServiceProviderEmail)},${con.escape(req.body.ServiceProviderPassword)});`,
         (err, result) => {
             if (err) {
                 console.log(err)
-                res.sendStatus(500).send(err.message)
-                
+                res.end(err.message.toString())
             }
             else {
                 console.log(result)
