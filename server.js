@@ -6,7 +6,8 @@ require('dotenv').config();
 app.use(express.json());
 app.use(bodyParser.json())
 
-const mysql = require("mysql2")
+const mysql = require("mysql2");
+const { json } = require("express");
 // const con = mysql.createConnection({
 //     host: 'localhost',
 //     user: 'root',
@@ -76,12 +77,16 @@ app.get('/services/:superCatId', (req, res) => {
     )
 })
 app.post('/add-service-to-provider',(req,res)=>{
-    console.log(req.body.selectedService.service_id,req.body.userData.ServiceProviderId)
-    con.query(`insert into SERVICE_PROVIDER_AND_SERVICE (ServiceProviderIdinMap,service_id) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id})`,
+    console.log(req.body.selectedService.service_id,req.body.userData.ServiceProviderId,req.body.ServiceLocation,req.body.ReadableServiceLocation.postalCode)
+    let serviceAdd=  JSON.stringify(req.body.ReadableServiceLocation)
+    let query =`insert into SERVICE_PROVIDER_AND_SERVICE (ServiceProviderIdinMap,service_id,ServiceLatitude,ServiceLongitude,ServicePincode,ServiceAddress) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id},${req.body.ServiceLocation.coords.latitude},${req.body.ServiceLocation.coords.longitude},${con.escape(req.body.ReadableServiceLocation.postalCode)},${con.escape(serviceAdd)})`;
+    console.log(query)
+    con.query(query,
     (err,result)=>{
         err?res.send(err.message.toString()):res.send("Service Added Successfuly...")
 
     })
+    // res.send("fnk")
     
 })
 app.get('/services/:id', (req, res) => {
@@ -91,6 +96,19 @@ app.get('/services/:id', (req, res) => {
         else res.send(result[0]);
     })
 
+})
+app.get('/services-of-provider/:providerId',(req,res)=>{
+    let query = `select * from service_provider_and_service left join service_provider on 
+    service_provider.ServiceProviderId= service_provider_and_service.ServiceProviderIdinMap 
+    natural join service where service_provider_and_service.ServiceProviderIdinMap=${con.escape(req.params.providerId)}`
+    con.query(query,(err,result)=>{
+        if(err){
+            res.send("Error : "+err.message.toString())
+        }else
+        {
+            res.send(result)
+        }
+    })
 })
 app.get('/service-providers', (req, res) => {
     con.query('select * from SERVICE_PROVIDER', [req.params.id], (err, result) => {
