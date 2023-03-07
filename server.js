@@ -154,8 +154,8 @@ app.post('/users', (req, res) => {
 })
 app.post('/service-provider', (req, res) => {
     // return res.send(req.body);
-    con.query(`insert into service_provider (ServiceProviderImage,ServiceProvideName,ServiceProviderPhone,ServiceProviderEmail,ServiceProviderPassword)
-    values(${req.body.ServiceProviderImage},${req.body.ServiceProvideName},${req.body.ServiceProviderPhone},${req.body.ServiceProviderEmail},${req.body.ServiceProviderPassword});`,
+    con.query(`insert into service_provider (ServiceProvideName,ServiceProviderPhone,ServiceProviderEmail,ServiceProviderPassword)
+    values(${req.body.ServiceProvideName},${req.body.ServiceProviderPhone},${req.body.ServiceProviderEmail},${req.body.ServiceProviderPassword});`,
         (err, result) => {
             if (err) {
                 console.log(err)
