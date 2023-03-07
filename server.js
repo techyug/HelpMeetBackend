@@ -79,7 +79,7 @@ app.get('/services/:superCatId', (req, res) => {
 app.post('/add-service-to-provider',(req,res)=>{
     console.log(req.body.selectedService.service_id,req.body.userData.ServiceProviderId,req.body.ServiceLocation,req.body.ReadableServiceLocation.postalCode)
     let serviceAdd=  JSON.stringify(req.body.ReadableServiceLocation)
-    let query =`insert into SERVICE_PROVIDER_AND_SERVICE (ServiceProviderIdinMap,service_id,ServiceLatitude,ServiceLongitude,ServicePincode,ServiceAddress) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id},${req.body.ServiceLocation.coords.latitude},${req.body.ServiceLocation.coords.longitude},${con.escape(req.body.ReadableServiceLocation.postalCode)},${con.escape(serviceAdd)})`;
+    let query =`insert into service_provider_and_service (ServiceProviderIdinMap,service_id,ServiceLatitude,ServiceLongitude,ServicePincode,ServiceAddress) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id},${req.body.ServiceLocation.coords.latitude},${req.body.ServiceLocation.coords.longitude},${con.escape(req.body.ReadableServiceLocation.postalCode)},${con.escape(serviceAdd)})`;
     console.log(query)
     con.query(query,
     (err,result)=>{
