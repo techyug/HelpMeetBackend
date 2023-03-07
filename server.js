@@ -33,7 +33,7 @@ try {
 
 app.use((req, res, next) => {
     
-    console.log(req.ip,req.path, 'Time:', Date.now())
+    console.log(req.ip,req.path, 'Time:', Date.now(),req.headers)
     console.log(req.body)
     next()
   })
@@ -67,6 +67,22 @@ app.get('/services', (req, res) => {
             err ? res.send("Error :" + err) : res.send(result);
         }
     )
+})
+app.get('/services/:superCatId', (req, res) => {
+    con.query(`select * from service where super_cat_id=${con.escape(req.params.superCatId)}`,
+        (err, result, fields) => {
+            err ? res.send("Error :" + err) : res.send(result);
+        }
+    )
+})
+app.post('/add-service-to-provider',(req,res)=>{
+    console.log(req.body.selectedService.service_id,req.body.userData.ServiceProviderId)
+    con.query(`insert into SERVICE_PROVIDER_AND_SERVICE (ServiceProviderIdinMap,service_id) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id})`,
+    (err,result)=>{
+        err?res.send(err.message.toString()):res.send("Service Added Successfuly...")
+
+    })
+    
 })
 app.get('/services/:id', (req, res) => {
     console.log("req::::", req.params)
@@ -120,8 +136,8 @@ app.post('/users', (req, res) => {
 })
 app.post('/service-provider', (req, res) => {
     // return res.send(req.body);
-    con.query(`insert into SERVICE_PROVIDER (ServiceProviderImage,ServiceProvideName,ServiceProviderPhone,ServiceProviderEmail,ServiceProviderPassword)
-    values(?,?,?,?,?);`, [req.body.ServiceProviderImage, req.body.ServiceProvideName, req.body.ServiceProviderPhone, req.body.ServiceProviderEmail, req.body.ServiceProviderPassword],
+    con.query(`insert into service_provider (ServiceProviderImage,ServiceProvideName,ServiceProviderPhone,ServiceProviderEmail,ServiceProviderPassword)
+    values(${req.body.ServiceProviderImage},${req.body.ServiceProvideName},${req.body.ServiceProviderPhone},${req.body.ServiceProviderEmail},${req.body.ServiceProviderPassword});`,
         (err, result) => {
             if (err) {
                 console.log(err)
@@ -234,4 +250,4 @@ app.get('/hello', (req, res) => {
 })
 
 app.listen(3000, console.log("server running on render"));
-// app.listen(3000, console.log("server running on local machine"));
+ //app.listen(3000, console.log("server running on local machine"));
