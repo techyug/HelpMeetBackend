@@ -25,23 +25,23 @@ app.use(bodyParser.json())
 
 const mysql = require("mysql2");
 
-const con = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'finalyearapp',
-    port: '3306',
-    pool: 1
-});
-
 // const con = mysql.createConnection({
-//     host: 'db4free.net',
-//     user: 'helpmeetuser',
-//     password: '*tAqb7FfzD_YUiR',
-//     database: 'db_7080',
+//     host: 'localhost',
+//     user: 'root',
+//     password: '',
+//     database: 'finalyearapp',
 //     port: '3306',
 //     pool: 1
 // });
+
+const con = mysql.createConnection({
+    host: 'db4free.net',
+    user: 'helpmeetuser',
+    password: '*tAqb7FfzD_YUiR',
+    database: 'db_7080',
+    port: '3306',
+    pool: 1
+});
 
 try {
     con.connect();
