@@ -2,35 +2,54 @@ var express = require("express")
 var bodyParser = require('body-parser');
 var jwt = require('jsonwebtoken')
 var app = express();
-require('dotenv').config();
+
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
+
+io.on('connection',(socket)=>{
+    console.log("someone Connected ",socket.id)
+   setInterval(() => {
+    let t = new Date()
+    socket.emit('new-message',{msg:`it is a message to all by server sent at : ${t}`})
+   }, 10*60*100);
+    socket.on('disconnect',(reason)=>{
+        console.log("someone disconnected ",reason
+        )
+    })
+})
+
 app.use(express.json());
 app.use(bodyParser.json())
 
 const mysql = require("mysql2");
-const { json } = require("express");
-// const con = mysql.createConnection({
-//     host: 'localhost',
-//     user: 'root',
-//     password: '',
-//     database: 'finalyearapp',
-//     port: '3306',
-//     pool: 1
-// });
 
 const con = mysql.createConnection({
-    host: 'db4free.net',
-    user: 'helpmeetuser',
-    password: '*tAqb7FfzD_YUiR',
-    database: 'db_7080',
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'finalyearapp',
     port: '3306',
     pool: 1
 });
+
+// const con = mysql.createConnection({
+//     host: 'db4free.net',
+//     user: 'helpmeetuser',
+//     password: '*tAqb7FfzD_YUiR',
+//     database: 'db_7080',
+//     port: '3306',
+//     pool: 1
+// });
 
 try {
     con.connect();
 } catch (error) {
     console.warn(error)
 }
+
+
 
 app.use((req, res, next) => {
     
@@ -106,6 +125,16 @@ app.get('/services-of-provider/:providerId',(req,res)=>{
             res.send("Error : "+err.message.toString())
         }else
         {
+            res.send(result)
+        }
+    })
+})
+app.get('/messages-of-provider/:providerId',(req,res)=>{
+    let query = `select * from messages_provider_user natural join user natural join service_provider where messages_provider_user.ServiceProviderId=${con.escape(req.params.providerId)} `;
+    con.query(query,(err,result)=>{
+        if(err){
+            res.send(err.message.toString())
+        }else{
             res.send(result)
         }
     })
@@ -204,7 +233,7 @@ app.post("/login", (req, res) => {
                     if (result[0]) {
                         result[0].role = "user";
                         result[0].msg = "Login Success";
-                        let token = jwt.sign(result[0], "User", { expiresIn: '1h' })
+                        let token = jwt.sign(result[0], "User", { expiresIn: '1d' })
                         result[0].token = token;
                         res.send(result[0])
                     }
@@ -265,5 +294,9 @@ app.get('/hello', (req, res) => {
     res.send("sdkefl");
 })
 
-app.listen(3000, console.log("server running on render"));
+server.listen(3000,"192.168.212.79", () => {
+    console.log("listening....")
+  });
+
+//app.listen(3000, console.log("server running on render"));
  //app.listen(3000, console.log("server running on local machine"));
