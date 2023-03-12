@@ -13,7 +13,7 @@ io.on('connection',(socket)=>{
    setInterval(() => {
     let t = new Date()
     socket.emit('new-message',{msg:`it is a message to all by server sent at : ${t}`})
-   }, 10*60*100);
+   }, 10*60*1000);
     socket.on('disconnect',(reason)=>{
         console.log("someone disconnected ",reason
         )
@@ -294,7 +294,7 @@ app.get('/hello', (req, res) => {
     res.send("sdkefl");
 })
 
-server.listen(3000,"192.168.212.79", () => {
+server.listen(3000, () => {
     console.log("listening....")
   });
 
