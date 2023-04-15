@@ -9,9 +9,39 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 const { v4: uuidv4 } = require('uuid')
 const MessageStatus  = require("./Constants/Gconstants");
+const multer = require('multer')
+const path = require('path');
+const fs = require('fs');
+const mysql = require("mysql2");
+const process = require("process");
 
-// const messageId = uuidv4();
-// console.log("message id",messageId)
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+
+// Create public/uploads directories if they don't exist
+if (!fs.existsSync(path.join(__dirname, 'public'))) {
+  fs.mkdirSync(path.join(__dirname, 'public'));
+}
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR);
+}
+
+app.use(express.json());
+app.use(bodyParser.json())
+app.use('/public',express.static(path.join(__dirname,'public')))
+app.use((req, res, next) => {
+    console.log(req.ip, req.path, 'Time:', new Date())
+    next()
+})
+
+// Configure multer to handle file uploads
+
+
+
+
+ 
+ 
+
+
 
 let userSocketMap = new Map();
 let providerSocketMap = new Map()
@@ -165,77 +195,81 @@ io.on('connection', (socket) => {
     })
 })
 
-app.use(express.json());
-app.use(bodyParser.json())
 
-const mysql = require("mysql2");
-const process = require("process");
+
+
+
+
+
+// const con = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'root',
+//     password: '',
+//     database: 'finalyearapp',
+//     port: '3306',
+//     pool: 1
+// });
 
 
 const con = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'finalyearapp',
-    port: '3306',
-    pool: 1
-});
-
-// const con = mysql.createConnection({
-//         host: process.env.FREE_DB_HOST,
-//         user: process.env.DB_USER_NAME,
-//         password: process.env.DB_PASS,
-//         database: process.env.DB_NAME,
-//         port: process.env.DB_PORT,
-//         pool: 1
-//     });
+        host: process.env.FREE_DB_HOST,
+        user: process.env.DB_USER_NAME,
+        password: process.env.DB_PASS,
+        database: process.env.DB_NAME,
+        port: process.env.DB_PORT,
+        pool: 1
+    });
 try {
     con.connect();
 } catch (error) {
     console.log("db connect error", error)
 }
-
-const verifyUser = (req, res, next) => {
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, UPLOADS_DIR);
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + path.extname(file.originalname));
+    }
+  });
+  
+  const upload = multer({ storage });
+  
+  const verifyUser = (req, res, next) => {
     let tokenHeaderKey = process.env.TOKEN_HEADER_KEY;
     let jwtSecretKey = process.env.JWT_SECRET_KEY;
-
-    // console.log("Body : ", req.body)
-    // console.log("token key : ", tokenHeaderKey)
-    // console.log("jwt secret : ", jwtSecretKey)
-
+  
     try {
-        let token = req.header(tokenHeaderKey);
-        // console.log("token :", token)
-        let verified;
-        jwt.verify(token, jwtSecretKey, (err, decoded) => {
-            if (err) {
-                console.log("err", err)
-            }
-            else {
-                console.log("token verified", decoded.iat, decoded.exp, Date.now())
-                verified = decoded
-
-
-            }
-        });
-        if (verified) {
-            req.body.userDatafromToken = verified
-            next()
-
+      let token = req.header(tokenHeaderKey);
+      let verified;
+      jwt.verify(token, jwtSecretKey, (err, decoded) => {
+        if (err) {
+          console.log("err", err)
         } else {
-            // Access Denied
-            return res.status(401).send(error);
+          console.log("token verified", decoded.iat, decoded.exp, Date.now())
+          verified = decoded
         }
-    } catch (error) {
+      });
+  
+      if (verified) {
+        req.body.userDatafromToken = verified
+        next()
+      } else {
         // Access Denied
         return res.status(401).send(error);
+      }
+    } catch (error) {
+      // Access Denied
+      return res.status(401).send(error);
     }
-
-
-}
-app.get('/test', verifyUser, (req, res) => {
-    res.send(req.body)
-})
+  }
+  
+  app.post('/profile_picture', upload.single('image'),verifyUser, (req, res) => {
+    const imageUrl = `/public/uploads/${req.file.filename}`;
+    console.log(req.body.userDatafromToken);
+    res.json({ imageUrl });
+  });
+  
 app.get('/gettoken', (req, res) => {
     const data = req.body;
     let token = jwt.sign(data, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
@@ -246,11 +280,7 @@ app.get('/gettoken', (req, res) => {
 
 
 
-app.use((req, res, next) => {
 
-    console.log(req.ip, req.path, 'Time:', new Date())
-    next()
-})
 
 app.get('/users', (req, res) => {
     con.query("select * from user", (err, result) => {
@@ -315,6 +345,54 @@ app.get('/services/:id', verifyUser, (req, res) => {
         else res.send(result[0]);
     })
 
+})
+app.post('/bookings',verifyUser,(req,res)=>{
+    console.log(req.body)
+    const { booked_by_user_id, service_provider_id, service_id, booked_for_date, locationForService, description_by_user } = req.body;
+  const status = 1;
+  const status_description = 'New booking request.';
+
+  // Create a new booking record
+  con.query(`INSERT INTO booking (booked_by_user_id, service_provider_id, service_id, booked_for_date, locationForService,
+     description_by_user, status, status_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+   [booked_by_user_id, service_provider_id, service_id, booked_for_date, JSON.stringify(locationForService),
+     description_by_user, status, status_description], 
+     (error, results) => {
+    if (error) {
+      console.error(error);
+      res.status(500).send('Error creating booking.');
+    } else {
+      console.log('Booking created successfully.');
+      res.send('Booking created successfully.');
+    }
+  });
+})
+app.get('/bookings',verifyUser,(req,res)=>{
+    let query;
+    let params ;
+    console.log(req.body.userDatafromToken.role)
+   if(req.body.userDatafromToken.role!=='user'){
+    query=  `select id,booked_by_user_id,service_id,booked_for_date,status_description,booking.status,locationForService,description_by_user,
+    createdAt,user_id,user_phone,user_image,user_address, service_id,service_title,user_name
+     from booking join user on user.user_id=booking.booked_by_user_id natural join service where service_provider_id=?;
+    `;
+    params  =[con.escape(req.body.userDatafromToken.ServiceProviderId)]
+   }else{
+    query = `select * from booking where booked_by_user_id=?`;
+    params  =[req.body.userDatafromToken.user_id]
+   }
+   console.log(query,params)
+   
+    
+    con.query( query,params, (error, results) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send('Error retrieving bookings.');
+        } else {
+          console.log('Bookings retrieved successfully.');
+          res.json(results);
+        }
+      });
 })
 app.get('/services-of-provider/:providerId', verifyUser, (req, res) => {
     let query = `select * from service_provider_and_service left join service_provider on 

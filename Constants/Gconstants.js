@@ -7,4 +7,11 @@ const MessageStatus={
     messageReceived:9,
     messageReceivedandSeen:8,
 }
-module.exports = MessageStatus;
+const BookingStatus = {
+    bookingDeleted:0,
+    newBookingRequest :1,
+    acceptedByServiceProvider:2,
+    cancelledByServiceProvider:3,
+    cancelledByUser:4
+}
+module.exports = {MessageStatus,BookingStatus};
