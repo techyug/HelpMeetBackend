@@ -201,24 +201,24 @@ io.on('connection', (socket) => {
 
 
 
-const con = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'finalyearapp',
-    port: '3306',
-    pool: 1
-});
-
-
 // const con = mysql.createConnection({
-//         host: process.env.FREE_DB_HOST,
-//         user: process.env.DB_USER_NAME,
-//         password: process.env.DB_PASS,
-//         database: process.env.DB_NAME,
-//         port: process.env.DB_PORT,
-//         pool: 1
-//     });
+//     host: 'localhost',
+//     user: 'root',
+//     password: '',
+//     database: 'finalyearapp',
+//     port: '3306',
+//     pool: 1
+// });
+
+
+const con = mysql.createConnection({
+        host: process.env.FREE_DB_HOST,
+        user: process.env.DB_USER_NAME,
+        password: process.env.DB_PASS,
+        database: process.env.DB_NAME,
+        port: process.env.DB_PORT,
+        pool: 1
+    });
 try {
     con.connect();
 } catch (error) {
