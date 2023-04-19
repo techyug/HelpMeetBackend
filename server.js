@@ -373,20 +373,20 @@ app.post('/bookings',verifyUser,(req,res)=>{
   const status = 1;
   const status_description = 'New booking request.';
 
-  // Create a new booking record
-  con.query(`INSERT INTO booking (booked_by_user_id, service_provider_id, service_id, booked_for_date, locationForService,
-     description_by_user, status, status_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-   [booked_by_user_id, service_provider_id, service_id, booked_for_date, JSON.stringify(locationForService),
-     description_by_user, status, status_description], 
-     (error, results) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send('Error creating booking.');
-    } else {
-      console.log('Booking created successfully.');
-      res.send('Booking created successfully.');
-    }
-  });
+  const mysqlDate = new Date(booked_for_date).toISOString().slice(0, 19).replace('T', ' ');
+
+// Use a prepared statement to insert the new booking record
+const query = 'INSERT INTO booking (booked_by_user_id, service_provider_id, service_id, booked_for_date, locationForService, description_by_user, status, status_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+const values = [booked_by_user_id, service_provider_id, service_id, mysqlDate, JSON.stringify(locationForService), description_by_user, status, status_description];
+con.query(query, values, (error, results, fields) => {
+  if (error) {
+    console.error('Error creating booking: ' + error);
+    res.status(500).send('Error creating booking.');
+  } else {
+    console.log('Booking created successfully.');
+    res.send('Booking created successfully.');
+  }
+});
 })
 app.get('/bookings',verifyUser,(req,res)=>{
     let query;
@@ -395,7 +395,7 @@ app.get('/bookings',verifyUser,(req,res)=>{
    if(req.body.userDatafromToken.role!=='user'){
     query=  `select id,booked_by_user_id,service_id,booked_for_date,status_description,booking.status,locationForService,description_by_user,
     createdAt,user_id,user_phone,user_image,user_address, service_id,service_title,user_name
-     from booking join user on user.user_id=booking.booked_by_user_id natural join service where service_provider_id=?;
+     from booking join user on user.user_id=booking.booked_by_user_id natural join service where service_provider_id=? order by createdAt;
     `;
     params  =[con.escape(req.body.userDatafromToken.ServiceProviderId)]
    }else{
@@ -404,9 +404,9 @@ app.get('/bookings',verifyUser,(req,res)=>{
     booking.createdAt,user_id,user_phone,user_image,user_address,service_title,user_name,
     ServiceProvideName,ServiceProviderPhone 
     from booking join user on user.user_id=booking.booked_by_user_id 
-    join SERVICE_PROVIDER on SERVICE_PROVIDER.ServiceProviderId=booking.service_provider_id 
+    join service_provider on service_provider.ServiceProviderId=booking.service_provider_id 
     join service on service.service_id = booking.service_id
-     where booked_by_user_id=?`;
+     where booked_by_user_id=? order by createdAt` ;
     params  =[req.body.userDatafromToken.user_id]
    }
    console.log(query,params)
