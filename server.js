@@ -201,24 +201,24 @@ io.on('connection', (socket) => {
 
 
 
-// const con = mysql.createConnection({
-//     host: 'localhost',
-//     user: 'root',
-//     password: '',
-//     database: 'finalyearapp',
-//     port: '3306',
-//     pool: 1
-// });
-
-
 const con = mysql.createConnection({
-        host: process.env.FREE_DB_HOST,
-        user: process.env.DB_USER_NAME,
-        password: process.env.DB_PASS,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT,
-        pool: 1
-    });
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'finalyearapp',
+    port: '3306',
+    pool: 1
+});
+
+
+// const con = mysql.createConnection({
+//         host: process.env.FREE_DB_HOST,
+//         user: process.env.DB_USER_NAME,
+//         password: process.env.DB_PASS,
+//         database: process.env.DB_NAME,
+//         port: process.env.DB_PORT,
+//         pool: 1
+//     });
 try {
     con.connect();
 } catch (error) {
@@ -266,8 +266,26 @@ const storage = multer.diskStorage({
   
   app.post('/profile_picture', upload.single('image'),verifyUser, (req, res) => {
     const imageUrl = `/public/uploads/${req.file.filename}`;
+    let query;
+    let params
+    if(req.body.userDatafromToken.role=='user'){
+        query = `UPDATE user SET user_image = ? WHERE user_id = ?`
+        params = [imageUrl,req.body.userDatafromToken.user_id]
+    }else{
+        query = `update  service_provider set ServiceProviderImage=?  where ServiceProviderId=?`;
+        params = [imageUrl,req.body.userDatafromToken.ServiceProviderId]
+    }
+    con.query(query,params,(err,results)=>{
+        if(err)
+        {
+            console.log(err)
+            res.status(501).json({"Error":err})
+        }
+        else
+         res.json({ imageUrl });
+    })
     console.log(req.body.userDatafromToken);
-    res.json({ imageUrl });
+   
   });
   
 app.get('/gettoken', (req, res) => {
@@ -296,12 +314,15 @@ app.get('/users/:id', (req, res) => {
         }
     )
 })
-app.get('/user/:phone', (req, res) => {
+app.get('/user/:phone', verifyUser,(req, res) => {
 
     con.query("select * from user where user_phone=?", [req.params.phone],
         (err, result) => {
-            if (err) res.send("error in query" + err)
-            else res.send(result[0]);
+            if (err) res.status(501).send("error in query" + err)
+            else {
+                result[0]&& delete result[0].user_pass
+                res.send(result[0]);
+            }
         }
     )
 })
@@ -378,7 +399,14 @@ app.get('/bookings',verifyUser,(req,res)=>{
     `;
     params  =[con.escape(req.body.userDatafromToken.ServiceProviderId)]
    }else{
-    query = `select * from booking where booked_by_user_id=?`;
+    query = `select id,booked_by_user_id,booking.service_id,booked_for_date,status_description,booking.status,
+    locationForService,description_by_user,serviceProviderImage,
+    booking.createdAt,user_id,user_phone,user_image,user_address,service_title,user_name,
+    ServiceProvideName,ServiceProviderPhone 
+    from booking join user on user.user_id=booking.booked_by_user_id 
+    join SERVICE_PROVIDER on SERVICE_PROVIDER.ServiceProviderId=booking.service_provider_id 
+    join service on service.service_id = booking.service_id
+     where booked_by_user_id=?`;
     params  =[req.body.userDatafromToken.user_id]
    }
    console.log(query,params)
@@ -393,6 +421,19 @@ app.get('/bookings',verifyUser,(req,res)=>{
           res.json(results);
         }
       });
+})
+app.put('/bookings/:bookingId',verifyUser,(req,res)=>{
+    console.log(req.body)
+    const query = 'update booking set status = ? where id = ?';
+    const params = [req.body.status,req.params.bookingId];
+    con.query(query,params,(err,results)=>{
+        if(err)
+        res.status(501).send({error:err})
+        else {
+            res.send(results)
+        }
+    })
+   
 })
 app.get('/services-of-provider/:providerId', verifyUser, (req, res) => {
     let query = `select * from service_provider_and_service left join service_provider on 
@@ -453,6 +494,12 @@ app.get('/services-providers/:service_id', (req, res) => {
     con.query("select * from service_provider where service_id=?", [req.params.service_id],
         (err, result) => {
             err ? res.send("err" + err) : res.send(result);
+        })
+})
+app.get('/service-provider-by-phone/:phone',verifyUser,(req,res)=>{
+    con.query("select * from service_provider where ServiceProviderPhone=?", [req.params.phone],
+        (err, result) => {
+            err ? res.send("err" + err) : result[0] && delete result[0].ServiceProviderPassword ;res.send(result[0]);
         })
 })
 app.post('/users', (req, res) => {
