@@ -262,7 +262,7 @@ app.get('/services/:superCatId', verifyUser, (req, res) => {
 })
 app.post('/add-service-to-provider', verifyUser, (req, res) => {
     let serviceAdd = JSON.stringify(req.body.ReadableServiceLocation)
-    let query = `insert into service_provider_and_service (ServiceProviderIdinMap,service_id,ServiceLatitude,ServiceLongitude,ServicePincode,ServiceAddress) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id},${req.body.ServiceLocation.coords.latitude},${req.body.ServiceLocation.coords.longitude},${con.escape(req.body.ReadableServiceLocation.postalCode)},${con.escape(serviceAdd)})`;
+    let query = `insert into service_provider_and_service (ServiceProviderIdinMap,service_id,ServiceLatitude,ServiceLongitude,ServicePincode,ServiceAddress,serviceProviderFee) values(${con.escape(req.body.userData.ServiceProviderId)},${req.body.selectedService.service_id},${req.body.ServiceLocation.coords.latitude},${req.body.ServiceLocation.coords.longitude},${con.escape(req.body.ReadableServiceLocation.postalCode)},${con.escape(serviceAdd)},${con.escape(req.body.serviceProviderFee)})`;
     con.query(query,
         (err, result) => {
             if (err) {
@@ -273,6 +273,25 @@ app.post('/add-service-to-provider', verifyUser, (req, res) => {
 
         })
 
+})
+app.post('/delete-my-service', verifyUser, (req, res) => {
+    const serviceData = req.body.serviceData;
+
+    let query = `update service_provider_and_service set ServiceStatus="Removed" where service_id=${serviceData.service_id} and ServiceProviderIdinMap=${serviceData.ServiceProviderIdinMap}`;
+    con.query(query, (err, results) => {
+
+
+        if (err) {
+            res.send(err.message.toString())
+        }
+        else {
+            res.send("Service Deleted Successfuly...")
+
+        }
+
+
+
+    })
 })
 app.get('/services/:id', verifyUser, (req, res) => {
     con.query('select ServiceProviderId,ServiceProvideName,ServiceCategoryId from service where service_id=?', [req.params.id], (err, result) => {
@@ -341,7 +360,7 @@ app.put('/bookings/:bookingId', verifyUser, (req, res) => {
 app.get('/services-of-provider/:providerId', verifyUser, (req, res) => {
     let query = `select * from service_provider_and_service left join service_provider on 
     service_provider.ServiceProviderId= service_provider_and_service.ServiceProviderIdinMap 
-    natural join service where service_provider_and_service.ServiceProviderIdinMap=${con.escape(req.params.providerId)}`
+    natural join service where service_provider_and_service.ServiceProviderIdinMap=${con.escape(req.params.providerId)} and ServiceStatus !="Removed"`
     con.query(query, (err, result) => {
         if (err) {
             res.send("Error : " + err.message.toString())
@@ -361,7 +380,7 @@ app.get('/service-providers', (req, res) => {
 })
 app.get('/service-providers/:serviceId', (req, res) => {
 
-    con.query(`select * from  service_provider left join service_provider_and_service on service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap natural join service where service_id=${con.escape(req.params.serviceId)}`, (err, result) => {
+    con.query(`select * from  service_provider left join service_provider_and_service on service_provider.ServiceProviderId=service_provider_and_service.ServiceProviderIdinMap natural join service where service_id=${con.escape(req.params.serviceId)} and ServiceStatus !="Removed"`, (err, result) => {
         if (err) res.send("error in query" + err)
         else res.send(result);
     })
